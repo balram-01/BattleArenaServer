@@ -1,28 +1,49 @@
-const User = require("../models/User");
-const register = async (req, res) => {
+// In register.js
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+const sendOTPByEmail = require('../helper/sendOTPByEmail');
+
+const register=async (req, res) => {
     try {
-        const { email, mobile, ...otherUserData } = req.body;
+        const { email, password, ...otherParams } = req.body;
 
-        const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
-
+        // Check if the email is already registered
+        let existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            return res.status(400).json({ message: 'Email already registered' });
         }
-         const user = new User({
+
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create a new user instance
+        const newUser = new User({
             email,
-            mobile,
-            ...otherUserData,
+            password: hashedPassword,
+            otp,
+            ...otherParams
         });
 
         // Save the user to the database
-        await user.save();
+        await newUser.save();
 
-        return res.status(201).json({ message: "Registered successfully", data: user });
-    } catch (err) {
-        console.error(err.message);
-        return res.status(500).json({ message: "Internal Server Error" });
+        // Send OTP to user's email
+        const emailSent = await sendOTPByEmail(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ message: 'Error sending OTP email' });
+        }
+
+        // Return success message
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+        console.error('Error registering user:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-};
+}
 
 
-module.exports = {register}
+module.exports={register}
