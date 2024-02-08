@@ -11,7 +11,7 @@ const register=async (req, res) => {
         // Check if the email is already registered
         let existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: 'Email already registered' });
+            return res.status(400).json({ message: 'Email already registered' ,status:true});
         }
 
         // Generate OTP
@@ -22,6 +22,7 @@ const register=async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create a new user instance
+       
         const newUser = new User({
             email,
             password: hashedPassword,
@@ -35,14 +36,14 @@ const register=async (req, res) => {
         // Send OTP to user's email
         const emailSent = await sendOTPByEmail(email, otp);
         if (!emailSent) {
-            return res.status(500).json({ message: 'Error sending OTP email' });
+            return res.status(500).json({ message: 'Error sending OTP email' ,status:false});
         }
 
         // Return success message
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ message: 'User registered successfully' ,data:newUser,status:true});
     } catch (error) {
         console.error('Error registering user:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' ,status:false});
     }
 }
 const login = async (req, res) => {
@@ -51,18 +52,18 @@ const login = async (req, res) => {
 
         
         if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
+            return res.status(400).json({ message: 'Email and password are required',status:false });
         }
 
        
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found' ,status:false});
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid password' });
+            return res.status(401).json({ message: 'Invalid password',  status:false});
         }
 
         // Generate JWT token
@@ -72,45 +73,46 @@ const login = async (req, res) => {
         const token = jwt.sign({ userId: user._id }, JWT_SECRET);
 
         // Return token to client
-        res.status(200).json({ token, message: 'Login Successful' });
+        res.status(200).json({ token, message: 'Login Successful', data: user ,status:true});
 
     } catch (error) {
         console.error('Error logging in:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' ,status:false});
     }
 }
 
 
-const verifyOTP = async (req, res) => {
+const verifyEmail = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
          if (!email || !otp) {
-            return res.status(400).json({ message: 'Email and OTP are required' });
+            return res.status(400).json({ message: 'Email and OTP are required' ,status:false});
         }
 
          const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found', status: false });
         }
 
         if (user.otp !== otp) {
-            return res.status(400).json({ message: 'Invalid OTP' });
+            return res.status(400).json({ message: 'Invalid OTP', status: false });
         }
 
-        user.otp = null; 
+        user.otp = null;
+        user.emailVerified=true
         await user.save();
 
         console.log(`OTP verified for user with email: ${email}`);
 
        
-        return res.status(200).json({ message: 'OTP verified successfully' });
+        return res.status(200).json({ message: 'OTP verified successfully', status: true });
     } catch (error) {
         console.error('Error verifying OTP:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ message: 'Internal Server Error', status: false });
     }
 }
 
 
 
-module.exports = { register, verifyOTP, login }
+module.exports = { register, verifyEmail, login }

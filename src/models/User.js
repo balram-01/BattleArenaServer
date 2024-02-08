@@ -4,31 +4,33 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         max: 50,
-        required: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
+        default: "",
+        required:true   
     },
-    password: {
-        type: String,
-        required: true,
+    emailVerified: {
+        type: Boolean,
+        default: false
     },
     otp: {
         type: String,
-        default:""
-        
+        default: ""
+
     },
+    password: {
+        type: String,
+      
+    },
+   
     mobile: {
         type: String,
-        required: true,
         max: 10,
         unique: true
     },
     gender: {
         type: String,
-        required: true,
         max: 50
     },
     dob: {
