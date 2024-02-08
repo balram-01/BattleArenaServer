@@ -7,6 +7,7 @@ dotenv.config({ path: './src/config/.env' });
 
 const userRoutes = require('./routes/user');
 const { PORT, MONGODB_URI } = require("./config/config");
+const verifyToken = require('./middlewares/verifyToken');
 
 
 const app = express();
