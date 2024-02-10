@@ -5,6 +5,8 @@ const userSchema = new mongoose.Schema({
         type: String,
         max: 50,
     },
+    firstName: String,
+    lastName: String,
     email: {
         type: String,
         default: "",
