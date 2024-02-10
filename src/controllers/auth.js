@@ -114,5 +114,36 @@ const verifyEmail = async (req, res) => {
 }
 
 
+// Middleware to cache usernames to reduce database queries
+const usernameCache = new Map();
+const CACHE_EXPIRATION_TIME = 60000; // 1 minute
 
-module.exports = { register, verifyEmail, login }
+const validateUserName = async (req, res) => {
+    const { username } = req.params;
+    try {
+        // Check if the username exists in cache
+        if (usernameCache.has(username)) {
+            return res.json({ unique: false, message: 'Username is already taken' });
+        }
+  
+        // Check if the username already exists in the database
+        const existingUser = await User.findOne({ username }).lean();
+         if (existingUser) {
+            // Username is not unique
+            usernameCache.set(username, true); // Cache the result
+            setTimeout(() => usernameCache.delete(username), CACHE_EXPIRATION_TIME); // Expire the cache entry after some time
+            return res.json({ unique: false, message: 'Username is already taken' });
+        } else {
+            // Username is unique
+            return res.json({ unique: true, message: 'Username is available' });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+
+
+
+module.exports = { register, verifyEmail, login,validateUserName }
