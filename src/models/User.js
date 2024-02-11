@@ -4,9 +4,16 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         max: 50,
+        default:''
     },
-    firstName: String,
-    lastName: String,
+    firstName: {
+        type:String,
+        default:''
+    },
+    lastName: {
+        type: String,
+        default: ''
+    },
     email: {
         type: String,
         default: "",
@@ -18,11 +25,13 @@ const userSchema = new mongoose.Schema({
     },
     otp: {
         type: String,
-        default: ""
+        default: "",
+        select:false
 
     },
     password: {
         type: String,
+        select:false
       
     },
    

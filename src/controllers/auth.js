@@ -38,9 +38,9 @@ const register=async (req, res) => {
         if (!emailSent) {
             return res.status(500).json({ message: 'Error sending OTP email' ,status:false});
         }
-
+        const token = jwt.sign({ userId: newUser._id }, JWT_SECRET);
         // Return success message
-        res.status(201).json({ message: 'User registered successfully' ,data:newUser,status:true});
+        res.status(201).json({ message: 'User registered successfully' ,data:newUser,status:true,token});
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal Server Error' ,status:false});
@@ -49,14 +49,13 @@ const register=async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        
+        console.log(email,password);
         if (!email || !password) {
             return res.status(400).json({ message: 'Email and password are required',status:false });
         }
 
        
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select('+password');
         if (!user) {
             return res.status(404).json({ message: 'User not found' ,status:false});
         }
@@ -71,8 +70,9 @@ const login = async (req, res) => {
             "JWT_SECRET" + JWT_SECRET
         )
         const token = jwt.sign({ userId: user._id }, JWT_SECRET);
-
         // Return token to client
+        const { password: userPassword, ...userData } = user.toObject();
+
         res.status(200).json({ token, message: 'Login Successful', data: user ,status:true});
 
     } catch (error) {
